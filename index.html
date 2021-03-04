@@ -9,54 +9,74 @@
 </head>
 
 <body>
-    <h1>CS 4641 Project Proposal Document</h1>
+    <h1>Predicting the Next Pitch</h1>
 
-    <p><strong>Group: </strong>Logan Bussell, TODO other names here</p>
+    <strong>CS 4641 Spring 2021 Group 35 Project Proposal</strong>
 
-    <h2>Video</h2>
+    <p>Logan Bussell, TODO other names here</p>
+
+    <h4>Video</h4>
     <p>TODO Video embed goes here.</p>
 
     <h2>Introduction</h2>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.</p>
+    <p>In baseball, there are a few distinct types of pitches that a pitcher can make, and it is tough to tell which one
+        they will make at any given time. However, a pitcher isn’t a random number generator - they likely make certain
+        pitches with higher probability than others, and change up their strategy depending on the state of the game and
+        the opposing batter’s skill. Knowing what pitch that an opposing pitcher is going to make next can help to
+        improve a batter’s accuracy.</p>
+
+    <p>The inspiration for this project came from discussion with a manager on Georgia Tech’s baseball team, who
+        envisioned a system that could predict their opponent’s pitches without cheating.</p>
 
     <h2>Problem Definition</h2>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.</p>
+    <p>Hitting a baseball is very difficult. A great batter can hit the ball only about 30% of the time. We would like
+        to increase the chances of a Major League Baseball batter hitting the ball by predicting for them ahead of time
+        what kind of pitch (fast ball, curve ball, etc) will be thrown next. This will be based on several factors: for
+        example, if all bases are loaded and the incoming batter has very strong stats, then the pitcher is likely to
+        walk the batter. As such, we will include the stats of the batter (average hit rate, percent of home runs,
+        etc.), the number of runs, the state of the bases, and the pitcher’s previous throws as features in our model.
+    </p>
 
     <h2>Methods</h2>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.</p>
+    <p>Train a machine learning model based on a pitcher’s prior games, taking in the game’s state, the pitcher’s
+        metrics, and each batter’s metrics. Then in the middle of a game, use this model to try and predict the
+        pitcher’s next move so that the batter can anticipate the pitch and has a better chance at hitting the ball.
+        Some possible machine learning techniques for this task include using random forest, as seen in some previous
+        research in this area. On the deep learning side, given that we’re dealing with data that changes over time,
+        using a recurrent neural network such as a Long Short Term Memory may also be effective.</p>
 
     <h2>Potential Results</h2>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.</p>
+    <p>We would like to be able to predict the pitcher’s next move with a reliability greater than the naive guess.
+        Ideally, this would be applicable to a real baseball game, allowing a batter to have a higher likelihood of
+        hitting the ball. This can be tested on previous (and future) major league baseball games, by picking a subset
+        of them that will not be used in training our model and comparing how our predictions are in comparison to the
+        real pitches in the game. While it is unlikely that our predictions will be extremely accurate, we would like to
+        predict at a statistically significant rate higher than a naive guess, as this would constitute an improvement.
+    </p>
 
     <h2>Discussion</h2>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.</p>
+    <p>At this stage, there are still some components about the implementation that aren’t yet defined, such as which
+        specific features to use, and whether to predict simply the type of pitch or also the speed. Additionally, it is
+        hard to determine how viable the idea is. For example, some studies show a significant improvement compared to
+        the naive guess, while others show none.</p>
 
-    <h2>References</h2>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.</p>
+    <h2>References and Similar Studies</h2>
+    <ul>
+        <li><a href="https://medium.com/@matt42kirby/predicting-baseball-pitches-33f906cbbdee">Predicting pitches for a
+                single pitcher at 15% better than naive guess</a></li>
+        <li><a
+                href="https://medium.com/@alexwbell/predicting-the-next-baseball-pitch-utilizing-machine-learning-to-gain-an-advantage-cef35bbd6e26">Predicting
+                the next baseball pitch</a></li>
+        <li><a href="https://cs230.stanford.edu/projects_spring_2018/reports/8290890.pdf">Predicting Next Baseball Pitch
+                Type with RNN</a></li>
+        <li><a href="https://dash.harvard.edu/bitstream/handle/1/37364634/PLUNKETT-SENIORTHESIS-2019.pdf?sequence=1">Pitch
+                Type Prediction in Major League Baseball</a></li>
+        <li><a
+                href="https://www.researchgate.net/publication/326972628_Applying_machine_learning_techniques_to_baseball_pitch_prediction">Applying
+                Machine Learning Techniques to Baseball Pitch Prediction</a></li>
+        <li><a href="https://fisher.wharton.upenn.edu/wp-content/uploads/2020/09/Thesis_Andrew-Cui.pdf">Forecasting
+                Outcomes of Major League Baseball Games Using Machine Learning</a></li>
+    </ul>
 
 </body>
 
