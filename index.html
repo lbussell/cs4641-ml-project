@@ -77,7 +77,25 @@
         <li><a href="https://fisher.wharton.upenn.edu/wp-content/uploads/2020/09/Thesis_Andrew-Cui.pdf">Forecasting
                 Outcomes of Major League Baseball Games Using Machine Learning</a></li>
     </ul>
+    
+    <h2>Data Collection</h2>
+    <p>For the data collection portion, our team was able to make use of a library known as pybaseball. This python package scrapes from Baseball Reference, Baseball Savant, and 
+        FanGraphs to build out an API and allow developers to more easily access current and historical baseball data.  After experimenting a bit with the package, we decided 
+        to focus on 6 pitchers for the purpose of our research. We pulled all of their provided pitching data down into .csv files.
+        For the purposes of this midpoint stage, we only tested our methods on Gerrit Cole’s career pitching data. </p>
+    <h2>Data Cleaning</h2>
+    <p>The next step was to clean the data we retrieved from the package down to only statistics we saw as relevant for our model. This left us with 19 statistics to analyze the data on, 
+       which can be seen in our jupyter notebook file called ‘data_cleaning.’ Furthermore, we shifted down particular columns so that they aligned with the next at bat. This made it easy to quickly analyze 
+       what event happened previously leading up to the current pitch. Lastly, we changed the categorical data to one-hot encoding, so that it could more easily be used with our model.</p>
+    <h2>Methods</h2>
+    <p>We decided to use a neural network in PyTourch with an ReLU activation function, 5 layers, and a softmax activation function at the end of the network. For training we used 10 epochs and an Adam optimizer.
+       We chose the adam optimizer instead of the SGD to avoid local min of 33% accuracy. For the train-validation cycle, 80% of the data was used to train the network,
+       while the other 20% was used for validation to ensure no overfitting.</p>
+    <h2>Results and Discussion</h2>
+    <p>In total, we obtained an accuracy of 54%. This is barely better than the naive guess, considering that 51% of our data was a fastball, so we would only be guessing 3% worse if we guessed fastball everytime.
+    We will need to look for a better way of determining accuracy.</p>
 
+    
 </body>
 
 </html>
