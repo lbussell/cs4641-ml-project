@@ -87,7 +87,7 @@
     <p>The next step was to clean the data we retrieved from the package down to only statistics we saw as relevant for our model. This left us with 19 statistics to analyze the data on, 
        which can be seen in our jupyter notebook file called ‘data_cleaning.’ Furthermore, we shifted down particular columns so that they aligned with the next at bat. This made it easy to quickly analyze 
        what event happened previously leading up to the current pitch. Lastly, we changed the categorical data to one-hot encoding, so that it could more easily be used with our model.</p>
-    <img src="/assets/cleaned_data.png"/>
+    <img src="./assets/cleaned_data.png" alt="Cleaned Data"/>
 
     <h2>Methods</h2>
     <p>We decided to use a neural network in PyTourch with an ReLU activation function, 5 layers, and a softmax activation function at the end of the network. For training we used 10 epochs and an Adam optimizer.
