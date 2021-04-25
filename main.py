@@ -261,7 +261,7 @@ def train(config, checkpoint_dir=None, cwd=None):
     elif opt == 'lbfgs':
         optimizer = optim.LBFGS(model.parameters(), lr=lr, max_iter=max_iter)
     elif opt == 'sgd':
-        optimizer = optim.SGD(model.parameters(), lr=lr)
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     if checkpoint_dir:
         checkpoint = os.path.join(os.path.join(cwd, checkpoint_dir), 'checkpoint')
         if os.path.isfile(checkpoint):
