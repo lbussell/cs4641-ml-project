@@ -15,7 +15,7 @@ from functools import partial
 gpu = True
 
 class LSTM_Network(nn.Module):
-    def __init__(self, input_features=13, hidden_size=128, num_layers=1, num_hidden=1, num_classes=2):
+    def __init__(self, input_features=14, hidden_size=128, num_layers=1, num_hidden=1, num_classes=2):
         super(LSTM_Network, self).__init__()
         self.num_classes = num_classes
         self.input_features = input_features
@@ -75,15 +75,12 @@ class FeedForward_Network(nn.Module):
         return out
 
 class Dataset(data.Dataset):
-    def __init__(self, root, training, gpu):
+    def __init__(self, root, training, gpu, test=False):
         self.root = root
         self.data_root = root + '/data/'
         self.label_root = root + '/labels/'
         self.data_names = os.listdir(self.data_root)
         self.device = torch.device('cuda' if torch.cuda.is_available() and gpu else 'cpu')
-        #self.data = torch.Tensor(np.load(root + '/data.npy')).to(self.device)
-        #self.label = torch.Tensor(np.load(root + '/labels.npy')).to(self.device)
-        
         self.training = training
         self.index = 0
         self.data = []
@@ -99,26 +96,14 @@ class Dataset(data.Dataset):
         self.labels = torch.Tensor(self.labels).to(self.device)
         length = len(self.labels)
         if training:
-            self.data = self.data[:int(0.2 * length), :]
-            self.labels = self.labels[:int(0.2 * length)]
+            self.data = self.data[:int(0.7 * length), :]
+            self.labels = self.labels[:int(0.7 * length)]
+        elif test:
+            self.data = self.data[int(0.9 * length):, :]
+            self.labels = self.labels[int(0.9 * length):]
         else:
-            self.data = self.data[int(0.85 * length):, :]
-            self.labels = self.labels[int(0.85 * length):]
-            
-    #old lstm getitem
-    
-    '''
-    def __getitem__(self, index):
-        # sample 5 pitches at a time, or less if 5 havent happened yet...
-        data = self.data[index + 1 : index + 6]
-        prev_pitches = self.label[index : index + 5][:, np.newaxis]
-        data = torch.cat((data, prev_pitches), 1)
-        
-        label = self.label[index + 6]
-        return data, label
-    '''
-    
-    #new lstm getitem
+            self.data = self.data[int(0.7 * length):int(0.9 * length), :]
+            self.labels = self.labels[int(0.7 * length):int(0.9 * length)]
     def __getitem__(self, index):
         return self.data[index], self.labels[index]
     
@@ -241,9 +226,11 @@ def evaluate(model, criterion, validloader, test_flag=False, gpu=True, save_dir=
         print()
     return losses.avg, accs.avg
 
-def train(config, checkpoint_dir=None, cwd=None):
+def train(config, checkpoint_dir=None, cwd=None, tuning=False):
     device = 'cuda' if torch.cuda.is_available() and gpu else 'cpu'
-    model = LSTM_Network(num_hidden=5, num_layers=2, hidden_size=512).to(device)
+    num_hidden = config['num_hidden']
+    num_layers = config['num_layers']
+    model = LSTM_Network(num_hidden=num_layers, num_layers=num_hidden, hidden_size=512).to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     opt = config['opt']
     lr = config['lr']
@@ -254,6 +241,7 @@ def train(config, checkpoint_dir=None, cwd=None):
     max_iter = config['max_iter']
     epochs = config['epoch']
     patience = config['patience']
+    batch_size = config['batch_size']
     if opt == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay, betas=(beta_1, beta_2))
     elif opt == 'adamw':
@@ -269,8 +257,8 @@ def train(config, checkpoint_dir=None, cwd=None):
             model.load_state_dict(model_state)
             optimizer.load_state_dict(optimizer_state)
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
-    batch_size = 64
-    train_loader, valid_loader = get_dataloader(root='cleaned_data/cole', batch_size=batch_size)
+    batch_size = batch_size
+    train_loader, valid_loader = get_dataloader(root=os.path.join(cwd, 'cleaned_data/kershaw'), batch_size=batch_size)
     scheduler = ReduceLROnPlateau(optimizer, patience=patience)
     scaler = torch.cuda.amp.GradScaler(enabled=True)
     #checkpoint = torch.load('saved/lstm/20.pth')
@@ -278,20 +266,20 @@ def train(config, checkpoint_dir=None, cwd=None):
     for epoch in range(1, epochs + 1):
         loss_train, acc_train = train_epoch(model, criterion, optimizer, train_loader, scaler, epoch, use_amp=False, gpu=gpu, batch_size=batch_size)
         loss_val, acc_val = evaluate(model, criterion, valid_loader, gpu=gpu, batch_size=batch_size)
-        if not os.path.isdir('saved/%s' % ('lstm/')):
-            os.mkdir('saved/%s' % ('lstm'))
+        #if not os.path.isdir('saved/%s' % ('lstm/')):
+        #    os.mkdir('saved/%s' % ('lstm'))
         torch.save({
             'epoch': epoch,
             'optimizer_state_dict': optimizer.state_dict(),
             'model_state_dict': model.state_dict(),
             'loss_val': loss_val,
             'loss_train': loss_train,
-        }, 'saved/%s/%s' % ('lstm', str(epoch) + '.pth' ))
-        
-        with tune.checkpoint_dir(step=epoch) as checkpoint_dir:
-            path = os.path.join(checkpoint_dir, 'checkpoint')
-            torch.save((model.state_dict(), optimizer.state_dict()), path)
-        tune.report(loss=loss_val, accuracy=acc_val)
+        }, os.path.join(cwd, 'saved/%s/%s' % ('lstm', str(epoch) + '.pth' )))
+        if tuning:
+            with tune.checkpoint_dir(step=epoch) as checkpoint_dir:
+                path = os.path.join(checkpoint_dir, 'checkpoint')
+                torch.save((model.state_dict(), optimizer.state_dict()), path)
+            tune.report(loss=loss_val, accuracy=acc_val)
         
         if (optimizer.param_groups[0]['lr'] / config['lr']) <= 1e-3:
                 print('Learning Rate Reduced to 1e-3 of Original Value', 'Training Stopped', sep='\n')
@@ -302,8 +290,10 @@ def optimize():
     name_dir = os.path.join('saved', 'hyper-lstm')
     hyperparam_config = {
         'name': 'lstm',
+        'num_hidden': tune.sample_from(lambda _: np.random.randint(1,10)),
+        'num_layers': tune.sample_from(lambda _: np.random.randint(1,5)),
         'opt': tune.choice(['adam', 'sgd', 'adamw', 'lbfgs']),
-        'lr': tune.loguniform(1e-8, 1e-1),
+        'lr': tune.loguniform(1e-10, 1),
         'epoch': tune.sample_from(lambda _: np.random.randint(5,25)),
         'beta_1': tune.loguniform(1e-8, 1e-2),
         'beta_2': tune.loguniform(1e-8, 1e-2),
@@ -311,6 +301,7 @@ def optimize():
         'max_iter': tune.sample_from(lambda _: np.random.randint(10,100)),
         'momentum': tune.uniform(0.5, 0.9),
         'patience': tune.sample_from(lambda _: np.random.randint(5, 25)),
+        'batch_size': 16
     }
     if not os.path.isdir(name_dir):
         os.mkdir(name_dir)
@@ -323,14 +314,14 @@ def optimize():
     )
     reporter = CLIReporter(metric_columns=["loss", "accuracy"])
     result = tune.run(
-            partial(train, checkpoint_dir=name_dir, cwd=os.getcwd()),
-            resources_per_trial = {"cpu": 1, "gpu": 0.125},
+            partial(train, checkpoint_dir=name_dir, cwd=os.getcwd(), tuning=True),
+            resources_per_trial = {"cpu": 1, "gpu": 0.5},
             config = hyperparam_config,
-            num_samples = 40,
+            num_samples = 300,
             scheduler = scheduler,
             progress_reporter = reporter
     )
-    best_trial = result.get_best_trial("iou", "max", "last")
+    best_trial = result.get_best_trial("accuracy", "max", "last")
     
     print("Best trial config: {}".format(best_trial.config))
     print("Best trial final validation loss: {}".format(
@@ -338,17 +329,23 @@ def optimize():
     print("Best trial final validation accuracy: {}".format(
         best_trial.last_result["accuracy"]))
     print("Best Checkpoint Dir: " + str(best_trial.checkpoint.value))
-    
-    #best_model = model_mappings[best_trial.config['model']]
-    checkpoint = torch.load(os.path.join(name_dir, 'checkpoint'))
-    #best_model.load_state_dict(checkpoint['model_state_dict'])
-    torch.save({
-                'epoch': best_trial.config['epoch'],
-                'version': best_trial.config['epoch'],
-                'optimizer_state_dict': checkpoint['optimizer_state_dict'],
-                'model_state_dict': checkpoint['model_state_dict'],
-            }, os.path.join(name_dir, 'best.pth')
-    )
+
+def test(name, checkpoint):
+    device = torch.device('cuda' if torch.cuda.is_available() and gpu else 'cpu')
+    batch_size = 1
+    test_set = Dataset('cleaned_data/kershaw', False, gpu, test=True)
+    test_loader = data.DataLoader(test_set, batch_size=batch_size, num_workers=0, drop_last=True, shuffle=True)
+    checkpoint = torch.load('saved/%s/%s.pth' % (name, checkpoint))
+    model = LSTM_Network(num_hidden=4, num_layers=7, hidden_size=512).to(device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    criterion = nn.CrossEntropyLoss().to(device)
+    loss_val, acc_val = evaluate(model, criterion, test_loader, gpu=gpu, batch_size=batch_size)
 
 if __name__ == '__main__':
-    optimize()
+    name_dir = os.path.join('saved', 'hyper-lstm')
+    #optimize()
+    train(config={'name': 'lstm', 'num_hidden': 7, 'num_layers': 4, 'opt': 'lbfgs', 'lr': 4.647114878517564e-06, 'epoch': 7, 'beta_1': 6.870079202867473e-06, 'beta_2': 1.3324095555115266e-06, 'weight_decay': 8.86976993946711e-06, 'max_iter': 86, 'momentum': 0.7597484977901667, 'patience': 18, 'batch_size': 16},
+        cwd=os.getcwd(),
+        checkpoint_dir=name_dir)
+    test('lstm', '7')
+
