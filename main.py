@@ -96,11 +96,12 @@ class Dataset(data.Dataset):
         self.labels = torch.Tensor(self.labels).to(self.device)
         length = len(self.labels)
         if training:
-            self.data = self.data[:int(0.7 * length), :]
-            self.labels = self.labels[:int(0.7 * length)]
+            self.data = self.data[:int(0.1 * length), :]
+            self.labels = self.labels[:int(0.1 * length)]
         elif test:
             self.data = self.data[int(0.9 * length):, :]
             self.labels = self.labels[int(0.9 * length):]
+            print(self.labels.sum()/self.labels.shape[0])
         else:
             self.data = self.data[int(0.7 * length):int(0.9 * length), :]
             self.labels = self.labels[int(0.7 * length):int(0.9 * length)]
@@ -230,7 +231,7 @@ def train(config, checkpoint_dir=None, cwd=None, tuning=False):
     device = 'cuda' if torch.cuda.is_available() and gpu else 'cpu'
     num_hidden = config['num_hidden']
     num_layers = config['num_layers']
-    model = LSTM_Network(num_hidden=num_layers, num_layers=num_hidden, hidden_size=512).to(device)
+    model = LSTM_Network(num_hidden=num_hidden, num_layers=num_layers, hidden_size=512).to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     opt = config['opt']
     lr = config['lr']
@@ -317,7 +318,7 @@ def optimize():
             partial(train, checkpoint_dir=name_dir, cwd=os.getcwd(), tuning=True),
             resources_per_trial = {"cpu": 1, "gpu": 0.5},
             config = hyperparam_config,
-            num_samples = 300,
+            num_samples = 200,
             scheduler = scheduler,
             progress_reporter = reporter
     )
@@ -329,23 +330,23 @@ def optimize():
     print("Best trial final validation accuracy: {}".format(
         best_trial.last_result["accuracy"]))
     print("Best Checkpoint Dir: " + str(best_trial.checkpoint.value))
+    return best_trial.config
 
-def test(name, checkpoint):
+def test(config):
     device = torch.device('cuda' if torch.cuda.is_available() and gpu else 'cpu')
     batch_size = 1
     test_set = Dataset('cleaned_data/kershaw', False, gpu, test=True)
     test_loader = data.DataLoader(test_set, batch_size=batch_size, num_workers=0, drop_last=True, shuffle=True)
-    checkpoint = torch.load('saved/%s/%s.pth' % (name, checkpoint))
-    model = LSTM_Network(num_hidden=4, num_layers=7, hidden_size=512).to(device)
+    checkpoint = torch.load('saved/%s/%s.pth' % (config['name'], config['epoch']))
+    model = LSTM_Network(num_hidden=config['num_hidden'], num_layers=config['num_layers'], hidden_size=512).to(device)
     model.load_state_dict(checkpoint['model_state_dict'])
     criterion = nn.CrossEntropyLoss().to(device)
     loss_val, acc_val = evaluate(model, criterion, test_loader, gpu=gpu, batch_size=batch_size)
 
 if __name__ == '__main__':
     name_dir = os.path.join('saved', 'hyper-lstm')
-    #optimize()
-    train(config={'name': 'lstm', 'num_hidden': 7, 'num_layers': 4, 'opt': 'lbfgs', 'lr': 4.647114878517564e-06, 'epoch': 7, 'beta_1': 6.870079202867473e-06, 'beta_2': 1.3324095555115266e-06, 'weight_decay': 8.86976993946711e-06, 'max_iter': 86, 'momentum': 0.7597484977901667, 'patience': 18, 'batch_size': 16},
-        cwd=os.getcwd(),
-        checkpoint_dir=name_dir)
-    test('lstm', '7')
+    #old_config={'name': 'lstm', 'num_hidden': 4, 'num_layers': 7, 'opt': 'lbfgs', 'lr': 4.647114878517564e-06, 'epoch': 7, 'beta_1': 6.870079202867473e-06, 'beta_2': 1.3324095555115266e-06, 'weight_decay': 8.86976993946711e-06, 'max_iter': 86, 'momentum': 0.7597484977901667, 'patience': 18, 'batch_size': 16}
+    config = optimize()
+    train(config=config, cwd=os.getcwd(), checkpoint_dir=name_dir)
+    test(config)
 
