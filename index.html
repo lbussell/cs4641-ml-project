@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>CS4641 Project Proposal</title>
+    <title>Predicting the Next Baseball Pitch</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
 </head>
@@ -11,54 +11,162 @@
 <body>
     <h1>Predicting the Next Pitch</h1>
 
-    <strong>CS 4641 Spring 2021 Group 35 Project Proposal</strong>
+    <strong>CS 4641 Spring 2021 Group 35 Project</strong>
 
     <p>Ali Ardestani, Logan Bussell, Jim James, Sreekar Madabushi, John Maginnes</p>
 
-    <h4>Video</h4>
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/3iw3mmttbJI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <h4>Video Presentation</h4>
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/3iw3mmttbJI" frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>
+
+    <h4><a href="https://github.com/lbussell/cs4641-ml-project">Project Source Code on GitHub</a></h4>
 
     <h2>Introduction</h2>
     <p>In baseball, there are a few distinct types of pitches that a pitcher can make, and it is tough to tell which one
         they will make at any given time. However, a pitcher isn’t a random number generator - they likely make certain
-        pitches with higher probability than others, and change up their strategy depending on the state of the game and
-        the opposing batter’s skill. Knowing what pitch that an opposing pitcher is going to make next can help to
-        improve a batter’s accuracy.</p>
-
-    <p>The inspiration for this project came from discussion with a manager on Georgia Tech’s baseball team, who
-        envisioned a system that could predict their opponent’s pitches without cheating.</p>
+        pitches with higher probability than others, and change up their strategy depending on the state of the game.
+        Knowing what pitch an opposing pitcher is going to make next can help to improve a batter’s accuracy.</p>
+    <p>Hitting a baseball is very difficult. In fact, it is regularly considered the “hardest thing to do in sports.” A
+        great batter can hit the ball only about 30% of the time. We would like to increase the chances of a Major
+        League Baseball batter hitting the ball by predicting for them ahead of time what kind of pitch (fast ball,
+        curve ball, etc) will be thrown next.</p>
 
     <h2>Problem Definition</h2>
-    <p>Hitting a baseball is very difficult. A great batter can hit the ball only about 30% of the time. We would like
-        to increase the chances of a Major League Baseball batter hitting the ball by predicting for them ahead of time
-        what kind of pitch (fast ball, curve ball, etc) will be thrown next. This will be based on several factors: for
-        example, if all bases are loaded and the incoming batter has very strong stats, then the pitcher is likely to
-        walk the batter. As such, we will include the stats of the batter (average hit rate, percent of home runs,
-        etc.), the number of runs, the state of the bases, and the pitcher’s previous throws as features in our model.
-    </p>
+    <p>The formal definition of our problem revolves heavily around the stats we believe to be useful in predicting the
+        next pitch the pitcher intends to throw. We can summarize it as such: given the current pitch count (balls and
+        strikes), previous pitch, current batter, amount of players on base, state of games (inning and strikes) and
+        difference in score, our model will predict which pitch is thrown next for a given pitcher.</p>
+    <p>In this particular problem definition, there are a few assumptions made. The first is that the distance between
+        games is not a factor. The second is that the pitcher will have a similar pitching strategy throughout the
+        entirety of the season.</p>
 
-    <h2>Methods</h2>
-    <p>Train a machine learning model based on a pitcher’s prior games, taking in the game’s state, the pitcher’s
-        metrics, and each batter’s metrics. Then in the middle of a game, use this model to try and predict the
-        pitcher’s next move so that the batter can anticipate the pitch and has a better chance at hitting the ball.
-        Some possible machine learning techniques for this task include using random forest, as seen in some previous
-        research in this area. On the deep learning side, given that we’re dealing with data that changes over time,
-        using a recurrent neural network such as a Long Short Term Memory may also be effective.</p>
+    <h2>Data Collection</h2>
+    <p>Since 2015, all MLB stadiums have been equipped with a high-tech game tracking system known as Statcast. Statcast
+        collects highly detailed data about player movements and athletic performance. For pitches, Statcast collects
+        lots of information about ball release, extension, velocity, and spin rate. Using this information, Statcast
+        uses its own neural network to classify the type of pitch that was just thrown. These labels are what we use to
+        train our models with.</p>
+    <p>Our team was able to make use of a library known as pybaseball (<a
+            href="https://github.com/jldbc/pybaseball">GitHub</a>). This python package
+        scrapes data Statcast data from several websites and provides it under one API, allowing developers to more
+        easily access current and historical baseball data.</p>
+    <p>After experimenting a bit with the package, we decided to focus on 3 pitchers for the purpose of our research,
+        Gerrit Cole, Max Scherzer and Clayton Kershaw. We pulled all of their provided pitching data down into .csv
+        files to be cleaned into what we felt was relevant.</p>
 
-    <h2>Potential Results</h2>
-    <p>We would like to be able to predict the pitcher’s next move with a reliability greater than the naive guess.
-        Ideally, this would be applicable to a real baseball game, allowing a batter to have a higher likelihood of
-        hitting the ball. This can be tested on previous (and future) major league baseball games, by picking a subset
-        of them that will not be used in training our model and comparing how our predictions are in comparison to the
-        real pitches in the game. While it is unlikely that our predictions will be extremely accurate, we would like to
-        predict at a statistically significant rate higher than a naive guess, as this would constitute an improvement.
+    <h2>Data Cleaning</h2>
+    <p>The next step was to clean the data we retrieved from the package down to only statistics we saw as relevant for
+        our model. The incoming data had 93 features, which we wanted to drastically simplify. The first thing we did
+        was drop any rows that didn’t have a pitch label. These were typically games that were played in stadiums that
+        did not utilize the PitchCast technology, and thus could be discarded. Next we discarded any data that we felt
+        was totally irrelevant, such as the location of the game, or the names of the fielding players.</p>
+    <p>After that, we consolidated the state of the game by keeping strictly numbers. For example, the dataset we were
+        working with gave the names of every player on base, which we decided to drop, keeping only the number of
+        runners on base. Similarly, we decided to drop the team scores and keep only a number representing how much the
+        pitcher's team was winning or losing by.</p>
+    <p>Next, we encode multiple different data points for ease of use. For the pitches, we put them in a binary format
+        as either a fastball or not a fastball. This allowed us to remove more redundant data such as pitch speed. For
+        the pitch count, we changed it from categorical data such as strike or ball to 1-hot encoding.</p>
+    <p>Lastly, we created new columns to make it easier to predict the next pitch. In order to do this, we shifted
+        relevant data from the previous pitch down to the next row. That way, our models would be able go one row at a
+        time and know all the current game information as well as data about the previous pitch. In total, we ended with
+        13 columns:</p>
+    <ul>
+        <li>Current # balls</li>
+        <li>Current # strikes</li>
+        <li>Current # outs</li>
+        <li>Current Inning</li>
+        <li>Number of batters on base</li>
+        <li>Whether the previous pitch was a fastball or not</li>
+        <li>Previous pitch horizontal and vertical position over the plate (x, z)</li>
+        <li>Batter’s stance/handedness</li>
+        <li>Whether the previous pitch was a ball/strike/hit (one-hot encoded, three columns)</li>
+        <li>The score differential (pitching team runs minus batting team runs)</li>
+    </ul>
+    <p>In total, each pitcher had a slightly different amount of data depending on how many pitches total they threw.
     </p>
+    <ul>
+        <li>Gerrit Cole: 10,532 pitches</li>
+        <li>Clayton Kershaw: 17,760 pitches</li>
+        <li>Max Scherzer: 20,299 pitches</li>
+    </ul>
+
+    <h2>Methods and Results</h2>
+    <p>We tried several different methods this time around, including an LSTM based neural network in PyTorch,
+        RandomForest from SKlearn, and SVM from sklearn. For all of the models, we ran a grid search hyperparameter
+        optimization, and then applied the model that performed the best on the validation set to the test set to get
+        our accuracy metric.</p>
+    <p>The data we used to train the methods was strictly from games before the data we used to test. This way, we
+        simulated predicting pitches in the future.</p>
+    <p>To put our results into perspective, we compared them against the naive guess of guessing fastball everytime. If
+        done on our dataset, this would yield a 59.8% accuracy.</p>
+
+    <h3>LSTM</h3>
+    <h4>Method</h4>
+    <p>For our LSTM, we tried a neural network with an LSTM layer, a few hidden layers with dropouts (to avoid
+        overfitting) and various activations, and a final output layer with a log softmax. In an effort to achieve the
+        best possible results, we tried numerous different LSTM layers, hidden layers, optimizers(SGD, Adam, AdamW,
+        LBFGS), learning rates, and activation functions (ReLU, LeakyReLU, Tanh, SIgmoid).</p>
+    <h4>Results</h4>
+    <p>63.9% accuracy</p>
+    <h4>Discussion</h4>
+    <p>In our experimentation with different combinations of parameters, we did find that shallower networks tended to
+        perform better. Those with fewer hidden layers and fewer LSTM layers tended to have better performance than
+        those with more.</p>
+    <p>That being said, the performance was still relatively poor compared to the naive guess. Our team speculates that
+        there could be a few different reasons for this. While we did have a large amount of data, it may have still
+        been insufficient for the quantity needed for an accurate neural net, leading to a slight underfit. In addition,
+        The pitcher has a largely random component to their pitches, making the loss function very jagged. Small or no
+        changes to the inputs can result in a different pitch. As a result, optimizers struggle to converge to a high
+        performing local optimum.</p>
+
+    <h3>Random Forest</h3>
+    <h4>Method</h4>
+    <p>Using the sklearn implementation of random forest, we were able to construct a random forest class that then
+        enabled us to perform hyperparameter optimization across a variety of different parameters, including
+        n_estimators (the number of decision trees), max_depth (the maximum depth of the decision tree), max_features
+        (the number of features to consider when looking for the best split), as well as whether or not bootstrapping is
+        used. This enabled us to identify optimal hyperparameters for random forest, which then achieved about 70%
+        accuracy.</p>
+    <h4>Results</h4>
+    <p>70.2% Accuracy</p>
+    <figure>
+        <img src="./assets/feature_importance.png" alt="Random Forest Feature Importance" />
+        <figcaption>Random forest feature importance</figcaption>
+    </figure>
+    <h4>Discussion</h4>
+    <p>Our implementation of random forest achieved 70.2% accuracy. This performance was the best of all the different
+        methods we employed. We noticed that smaller random forests that employ smaller decision trees were more
+        effective computationally while achieving similar levels of accuracy. We were also able to identify the most
+        important features in predicting the next pitches using the feature importances for any individual decision
+        tree. </p>
+
+    <h3>SVM</h3>
+    <h4>Method</h4>
+    <p>SVM stands for support vector machine. We employed the sklearn implementation of SVM to try and analyze if that
+        method would improve upon the accuracy our random forest implementation had. The studies from the beginning of
+        the project had told us that SVM would be the optimal method for predicting future data. We examined a variety
+        of different parameters including the different kernels, between polynomial, linear, and rbf, as well as the
+        regularization parameter C, in order to better our SVM method.</p>
+    <h4>Results</h4>
+    <p>62.2% Accuracy</p>
+    <h4>Discussion</h4>
+    <p>Unfortunately, we did not have enough time to run a hyperparameter optimization of SVM. Pre-existing literature
+        tells us that SVM should be the most effective method for an optimization method like this one, but
+        surprisingly, it was one of the least effective methods that we employed. This could be because we didn’t run
+        the hyperparameter optimization or because the data was not optimal for an SVM method. In the future, it would
+        be effective to run hyperparameter optimization for SVM and see if we could get better results. </p>
 
     <h2>Discussion</h2>
-    <p>At this stage, there are still some components about the implementation that aren’t yet defined, such as which
-        specific features to use, and whether to predict simply the type of pitch or also the speed. Additionally, it is
-        hard to determine how viable the idea is. For example, some studies show a significant improvement compared to
-        the naive guess, while others show none.</p>
+    <p>In conclusion, we saw varying levels of success with the different methods. While none of them were necessarily
+        as high as we would have liked, we did see relatively good results with the Random Forest. In addition, each of
+        them were able to successfully beat out the naive guess.</p>
+    <p>Future improvements to this project could certainly be made by taking into account more data and data points. For
+        example, we could attempt to classify results outside of just fastball and non-fastball, or look more
+        specifically at the statistics of the batter.</p>
+
+    <h4><a href="https://github.com/lbussell/cs4641-ml-project">Project Source Code on GitHub</a></h4>
 
     <h2>References and Similar Studies</h2>
     <ul>
@@ -77,27 +185,7 @@
         <li><a href="https://fisher.wharton.upenn.edu/wp-content/uploads/2020/09/Thesis_Andrew-Cui.pdf">Forecasting
                 Outcomes of Major League Baseball Games Using Machine Learning</a></li>
     </ul>
-    
-    <h2>Data Collection</h2>
-    <p>For the data collection portion, our team was able to make use of a library known as pybaseball. This python package scrapes from Baseball Reference, Baseball Savant, and 
-        FanGraphs to build out an API and allow developers to more easily access current and historical baseball data.  After experimenting a bit with the package, we decided 
-        to focus on 6 pitchers for the purpose of our research. We pulled all of their provided pitching data down into .csv files.
-        For the purposes of this midpoint stage, we only tested our methods on Gerrit Cole’s career pitching data. </p>
-    <h2>Data Cleaning</h2>
-    <p>The next step was to clean the data we retrieved from the package down to only statistics we saw as relevant for our model. This left us with 19 statistics to analyze the data on, 
-       which can be seen in our jupyter notebook file called ‘data_cleaning.’ Furthermore, we shifted down particular columns so that they aligned with the next at bat. This made it easy to quickly analyze 
-       what event happened previously leading up to the current pitch. Lastly, we changed the categorical data to one-hot encoding, so that it could more easily be used with our model.</p>
-    <img src="./assets/cleaned_data.png" alt="Cleaned Data"/>
 
-    <h2>Methods</h2>
-    <p>We decided to use a neural network in PyTourch with an ReLU activation function, 5 layers, and a softmax activation function at the end of the network. For training we used 10 epochs and an Adam optimizer.
-       We chose the adam optimizer instead of the SGD to avoid local min of 33% accuracy. For the train-validation cycle, 80% of the data was used to train the network,
-       while the other 20% was used for validation to ensure no overfitting.</p>
-    <h2>Results and Discussion</h2>
-    <p>In total, we obtained an accuracy of 54%. This is barely better than the naive guess, considering that 51% of our data was a fastball, so we would only be guessing 3% worse if we guessed fastball everytime.
-    We will need to look for a better way of determining accuracy.</p>
-
-    
 </body>
 
 </html>
